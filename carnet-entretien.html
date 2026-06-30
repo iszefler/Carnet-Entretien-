@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carnet — Entretien véhicules</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#17191F;
+    --ink-soft:#3A3D45;
+    --steel:#6B6F78;
+    --line:#D9DAD4;
+    --line-soft:#E7E8E2;
+    --bg:#EBECE7;
+    --panel:#FFFFFF;
+    --panel-2:#F4F5F1;
+    --ok:#1F8A4C;
+    --ok-bg:#E6F2EA;
+    --soon:#C77A00;
+    --soon-bg:#FBEFD9;
+    --late:#CC392B;
+    --late-bg:#FBE6E3;
+    --focus:#1d4ed8;
+    --radius:4px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+  .cond{font-family:"Saira Condensed",sans-serif}
+
+  /* ---- Top bar ---- */
+  header.topbar{
+    position:sticky;top:0;z-index:30;
+    background:var(--ink);
+    color:#F3F3EF;
+    border-bottom:3px solid #000;
+  }
+  .topbar-inner{
+    max-width:880px;margin:0 auto;padding:10px 16px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .brand{
+    font-family:"Saira Condensed",sans-serif;
+    font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    font-size:21px;line-height:1;display:flex;align-items:center;gap:9px;
+  }
+  .brand .tell{width:11px;height:11px;border-radius:50%;
+    background:var(--soon);box-shadow:0 0 9px var(--soon);}
+  .brand small{
+    font-family:"JetBrains Mono",monospace;font-weight:400;
+    font-size:10px;letter-spacing:.05em;color:#8A8E97;text-transform:none;
+  }
+  .topbar-spacer{flex:1}
+
+  /* vehicle tabs */
+  .veh-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+  .veh-tabs::-webkit-scrollbar{display:none}
+  .veh-tab{
+    flex:0 0 auto;border:1px solid #34373F;background:#22252C;color:#C9CBD1;
+    font-family:"Saira Condensed",sans-serif;font-weight:600;letter-spacing:.04em;
+    text-transform:uppercase;font-size:14px;padding:7px 12px;border-radius:var(--radius);
+    cursor:pointer;display:flex;align-items:center;gap:7px;white-space:nowrap;
+  }
+  .veh-tab .ic{font-size:13px;opacity:.8}
+  .veh-tab[aria-selected="true"]{
+    background:#F3F3EF;color:var(--ink);border-color:#F3F3EF;
+  }
+  .veh-tab:focus-visible{outline:2px solid #7da2ff;outline-offset:1px}
+
+  .btn{
+    cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;
+    font-family:"Saira Condensed",sans-serif;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;font-size:14px;padding:7px 13px;border-radius:var(--radius);
+    line-height:1;display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn.ghost.on-dark{color:#F3F3EF;border-color:#3C3F47;background:#22252C}
+  .btn.tiny{font-size:12px;padding:5px 9px}
+  .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .btn[disabled]{opacity:.4;cursor:not-allowed}
+
+  main{max-width:880px;margin:0 auto;padding:18px 16px 90px;}
+
+  /* ---- Vehicle panel ---- */
+  .veh-panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:6px;
+    overflow:hidden;margin-bottom:18px;
+  }
+  .veh-head{
+    padding:14px 16px 12px;border-bottom:1px solid var(--line-soft);
+    display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+  }
+  .veh-name{
+    font-family:"Saira Condensed",sans-serif;font-weight:700;
+    font-size:25px;line-height:1;letter-spacing:.01em;text-transform:uppercase;
+  }
+  .veh-meta{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--steel);
+    margin-top:5px;letter-spacing:.02em}
+  .veh-actions{display:flex;gap:6px;flex-shrink:0}
+  .icon-btn{
+    cursor:pointer;border:1px solid var(--line);background:var(--panel);
+    width:30px;height:30px;border-radius:var(--radius);color:var(--steel);
+    display:grid;place-items:center;font-size:14px;
+  }
+  .icon-btn:hover{color:var(--ink);border-color:var(--steel)}
+  .icon-btn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+  .gauges{display:grid;grid-template-columns:1.4fr 1fr 1fr;}
+  .gauge{padding:14px 16px;border-right:1px solid var(--line-soft);}
+  .gauge:last-child{border-right:none}
+  .gauge-label{font-family:"Saira Condensed",sans-serif;text-transform:uppercase;
+    letter-spacing:.1em;font-size:11px;color:var(--steel);font-weight:600;margin-bottom:4px}
+  .odo{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+  .odo-val{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:27px;
+    letter-spacing:-.5px;line-height:1}
+  .odo-unit{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--steel)}
+  .gauge-sub{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--steel);margin-top:5px}
+  .gauge .big{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:24px;line-height:1}
+
+  /* ---- Section ---- */
+  .section{margin-bottom:22px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;
+    margin:0 2px 10px;gap:10px}
+  .section-title{font-family:"Saira Condensed",sans-serif;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em;font-size:17px;display:flex;align-items:center;gap:9px}
+  .count-chip{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--steel);
+    border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+
+  /* ---- Tell-tale rows (reminders) ---- */
+  .tell-list{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .tell-row{
+    display:grid;grid-template-columns:auto 1fr auto;gap:13px;align-items:center;
+    padding:12px 15px;border-bottom:1px solid var(--line-soft);cursor:pointer;
+  }
+  .tell-row:last-child{border-bottom:none}
+  .tell-row:hover{background:var(--panel-2)}
+  .tell-row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+  .dot{width:13px;height:13px;border-radius:50%;border:2px solid;flex-shrink:0}
+  .dot.ok{background:var(--ok);border-color:var(--ok)}
+  .dot.soon{background:var(--soon);border-color:var(--soon)}
+  .dot.late{background:var(--late);border-color:var(--late);
+    box-shadow:0 0 0 0 rgba(204,57,43,.5);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(204,57,43,.45)}70%{box-shadow:0 0 0 7px rgba(204,57,43,0)}100%{box-shadow:0 0 0 0 rgba(204,57,43,0)}}
+  @media (prefers-reduced-motion:reduce){.dot.late{animation:none}}
+  .tell-main{min-width:0}
+  .tell-type{font-weight:600;font-size:15px}
+  .tell-int{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--steel);margin-top:1px}
+  .tell-status{text-align:right;flex-shrink:0}
+  .tell-badge{font-family:"Saira Condensed",sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;font-size:12.5px;padding:2px 8px;border-radius:3px;display:inline-block}
+  .tell-badge.ok{color:var(--ok);background:var(--ok-bg)}
+  .tell-badge.soon{color:var(--soon);background:var(--soon-bg)}
+  .tell-badge.late{color:var(--late);background:var(--late-bg)}
+  .tell-eta{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-soft);margin-top:3px}
+
+  /* ---- History ---- */
+  .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+  select.filter,input.filter{
+    font-family:"JetBrains Mono",monospace;font-size:12px;border:1px solid var(--line);
+    background:var(--panel);border-radius:var(--radius);padding:6px 9px;color:var(--ink);
+  }
+  select.filter:focus-visible,input.filter:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+  .hist{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .hist-row{
+    display:grid;grid-template-columns:78px 1fr auto;gap:13px;align-items:center;
+    padding:11px 15px;border-bottom:1px solid var(--line-soft);cursor:pointer;
+  }
+  .hist-row:last-child{border-bottom:none}
+  .hist-row:hover{background:var(--panel-2)}
+  .hist-date{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--steel);line-height:1.3}
+  .hist-mid{min-width:0}
+  .hist-type{font-weight:600;font-size:15px}
+  .hist-detail{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--steel);
+    margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hist-cost{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:14px;text-align:right;white-space:nowrap}
+
+  .empty{padding:26px 16px;text-align:center;color:var(--steel);
+    font-family:"JetBrains Mono",monospace;font-size:12.5px;line-height:1.6}
+  .empty b{color:var(--ink-soft);font-weight:500}
+
+  /* ---- Modal ---- */
+  .overlay{position:fixed;inset:0;background:rgba(20,22,27,.55);z-index:50;
+    display:none;align-items:flex-end;justify-content:center;padding:0}
+  .overlay.show{display:flex}
+  @media(min-width:560px){.overlay{align-items:center;padding:20px}}
+  .modal{
+    background:var(--panel);width:100%;max-width:520px;max-height:92vh;overflow-y:auto;
+    border-radius:10px 10px 0 0;border:1px solid var(--line);
+  }
+  @media(min-width:560px){.modal{border-radius:8px}}
+  .modal-head{
+    position:sticky;top:0;background:var(--panel);padding:16px 18px 12px;
+    border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;
+  }
+  .modal-title{font-family:"Saira Condensed",sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:.05em;font-size:19px}
+  .modal-body{padding:16px 18px 20px}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-family:"Saira Condensed",sans-serif;font-weight:600;
+    text-transform:uppercase;letter-spacing:.07em;font-size:11.5px;color:var(--steel);margin-bottom:4px}
+  .field input,.field select,.field textarea{
+    width:100%;font-family:"Inter",sans-serif;font-size:15px;border:1px solid var(--line);
+    border-radius:var(--radius);padding:9px 11px;background:var(--panel);color:var(--ink);
+  }
+  .field input.mono,.field.mono input{font-family:"JetBrains Mono",monospace}
+  .field textarea{font-family:"Inter",sans-serif;min-height:62px;resize:vertical}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--focus);outline-offset:1px;border-color:var(--focus)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .hint{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--steel);margin-top:4px;line-height:1.4}
+  .seg{display:flex;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;width:fit-content}
+  .seg button{border:none;background:var(--panel);padding:8px 16px;cursor:pointer;
+    font-family:"Saira Condensed",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:13px;color:var(--steel)}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  .modal-foot{display:flex;gap:9px;justify-content:space-between;align-items:center;
+    padding:14px 18px;border-top:1px solid var(--line-soft);position:sticky;bottom:0;background:var(--panel)}
+  .modal-foot .right{display:flex;gap:9px}
+  .link-danger{background:none;border:none;color:var(--late);cursor:pointer;
+    font-family:"Saira Condensed",sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:13px}
+  .note{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:var(--radius);
+    padding:9px 11px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--steel);line-height:1.5;margin-top:6px}
+
+  /* FAB */
+  .fab{
+    position:fixed;right:18px;bottom:18px;z-index:40;
+    background:var(--ink);color:#fff;border:none;border-radius:50px;
+    padding:14px 20px;font-family:"Saira Condensed",sans-serif;font-weight:700;
+    text-transform:uppercase;letter-spacing:.06em;font-size:15px;cursor:pointer;
+    box-shadow:0 6px 20px rgba(20,22,27,.28);display:inline-flex;align-items:center;gap:8px;
+  }
+  .fab:focus-visible{outline:2px solid #7da2ff;outline-offset:2px}
+
+  @media(max-width:520px){
+    .gauges{grid-template-columns:1fr 1fr}
+    .gauge:nth-child(1){grid-column:1/-1;border-right:none;border-bottom:1px solid var(--line-soft)}
+    .veh-name{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="tell"></span>
+      <span>Carnet</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <button class="btn ghost on-dark tiny" id="addVehBtn">+ Véhicule</button>
+  </div>
+  <div class="topbar-inner" style="padding-top:0;padding-bottom:10px">
+    <div class="veh-tabs" id="vehTabs"></div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<button class="fab" id="fabAdd">+ Entretien</button>
+
+<div class="overlay" id="overlay"></div>
+
+<script>
+"use strict";
+
+/* ----------------------------------------------------------
+   Stockage persistant (window.storage) avec repli en mémoire
+----------------------------------------------------------- */
+const KEY = "carnet-data-v2";
+const hasStore = typeof window !== "undefined" && window.storage && typeof window.storage.get === "function";
+
+let state = { vehicles: [], records: [], schedules: [], activeId: null };
+
+async function loadState(){
+  if(hasStore){
+    try{
+      const res = await window.storage.get(KEY);
+      if(res && res.value){ state = JSON.parse(res.value); }
+      else seed();
+    }catch(e){ seed(); }
+  } else { seed(); }
+  if(!state.activeId && state.vehicles[0]) state.activeId = state.vehicles[0].id;
+}
+async function saveState(){
+  if(hasStore){
+    try{ await window.storage.set(KEY, JSON.stringify(state)); }
+    catch(e){ console.warn("Sauvegarde impossible", e); }
+  }
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const today = () => new Date().toISOString().slice(0,10);
+
+/* ----------------------------------------------------------
+   Données de départ (modifiables) — pré-remplies pour démarrer
+----------------------------------------------------------- */
+function seed(){
+  const vId = uid();
+  const r=(date,type,km,notes)=>({id:uid(),vehiculeId:vId,type,date,km,cout:null,lieu:"",notes:notes||""});
+  state = {
+    activeId: vId,
+    vehicles: [{
+      id:vId, type:"voiture", marque:"Nissan", modele:"Qashqai",
+      motorisation:"1.6 dCi 130 · R9M", annee:2013, immat:"",
+      km:249313, kmDate:"2026-05-22"
+    }],
+    records: [
+      r("2022-02-10","Pneus (x2)",156891),
+      r("2022-04-01","Vidange",162100),
+      r("2022-05-12","Pneu (x1)",163612),
+      r("2022-10-22","Pneus arrière (x2)",175842),
+      r("2023-01-28","Rotule de suspension + Vidange + filtre",181325,"Rotule de suspension"),
+      r("2023-03-12","Plaquettes AV+AR + Disque AV",183600),
+      r("2023-05-24","Pneus avant (x2)",187399),
+      r("2024-02-03","Vidange + Filtre à huile + Filtre à air",200217),
+      r("2024-06-19","Pneus arrière",206580),
+      r("2024-07-10","Embrayage + Volant moteur",207177),
+      r("2024-11-05","Batterie",214740),
+      r("2025-02-08","Vidange + Filtre GO + Pneu AV",219200,"Pneu AV — usure 60 %"),
+      r("2025-03-02","Plaquettes freins AV",220130),
+      r("2025-09-24","Pneu AR (mis à l'arrière)",232817,"Pneu déplacé à l'arrière"),
+      r("2025-10-01","Vidange + Filtre GO + Filtre à air + Filtre habitacle",233811,"Jour exact d'octobre à confirmer"),
+      r("2025-10-30","Pneu AV",234996),
+      r("2026-05-22","Vidange",249313),
+    ],
+    // Périodicités de départ — À VÉRIFIER avec le carnet constructeur, tout est éditable
+    schedules: [
+      sch(vId,"Vidange + filtre à huile",15000,12,["vidange"]),
+      sch(vId,"Filtre habitacle",15000,12,["habitacle"]),
+      sch(vId,"Filtre à air",30000,null,["filtre a air"]),
+      sch(vId,"Filtre à carburant",30000,null,["filtre go","carburant","gasoil","gazole","filtre a carburant"]),
+      sch(vId,"Plaquettes avant",40000,null,["plaquette"]),
+      sch(vId,"Liquide de frein",null,24,["liquide de frein"]),
+      sch(vId,"Courroie d'accessoire",60000,null,["courroie"]),
+      sch(vId,"Contrôle technique",null,24,["controle technique"]),
+    ]
+  };
+  saveState();
+}
+function sch(vehiculeId,type,km,mois,match){
+  return { id:uid(), vehiculeId, type, intKm:km, intMois:mois, baseKm:null, baseDate:null, match:match||null };
+}
+function norm(s){return (s||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function recMatchesSchedule(r,s){
+  const rt=norm(r.type);
+  const keys=(s.match&&s.match.length)?s.match:[norm(s.type)];
+  return keys.some(k=>k&&rt.includes(k));
+}
+
+/* ----------------------------------------------------------
+   Helpers d'affichage
+----------------------------------------------------------- */
+const fmtKm = n => (n==null||n==="") ? "—" : Number(n).toLocaleString("fr-FR")+" km";
+const fmtKmRaw = n => Number(n).toLocaleString("fr-FR");
+const fmtEUR = n => (n==null||n==="") ? "—" : Number(n).toLocaleString("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:0});
+const fmtEUR2 = n => Number(n).toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
+function fmtDate(iso){ if(!iso) return "—"; const d=new Date(iso+"T00:00:00"); return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}); }
+function fmtDateShort(iso){ if(!iso) return ""; const d=new Date(iso+"T00:00:00"); return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"2-digit"}); }
+const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const activeVeh = () => state.vehicles.find(v=>v.id===state.activeId);
+const vehRecords = vid => state.records.filter(r=>r.vehiculeId===vid).sort((a,b)=> (b.date||"").localeCompare(a.date||"") || (b.km||0)-(a.km||0));
+const vehSchedules = vid => state.schedules.filter(s=>s.vehiculeId===vid);
+
+const TYPES = ["Vidange + filtre à huile","Filtre à huile","Filtre à air","Filtre habitacle","Filtre à carburant",
+"Courroie d'accessoire","Courroie de distribution","Plaquettes avant","Plaquettes arrière","Disques de frein",
+"Liquide de frein","Liquide de refroidissement","Pneus avant","Pneus arrière","Bougies","Batterie",
+"Amortisseurs","Embrayage","Contrôle technique","Révision générale","Réparation","Autre"];
+
+/* ----------------------------------------------------------
+   Calcul des échéances
+----------------------------------------------------------- */
+function computeStatus(s){
+  const veh = state.vehicles.find(v=>v.id===s.vehiculeId);
+  const curKm = veh ? Number(veh.km)||0 : 0;
+  // dernière intervention de ce type, sinon base, sinon état actuel du véhicule
+  const recs = state.records.filter(r=>r.vehiculeId===s.vehiculeId && recMatchesSchedule(r,s))
+                            .sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  const last = recs[0];
+  const lastKm = last && last.km!=null && last.km!=="" ? Number(last.km) : (s.baseKm!=null ? Number(s.baseKm) : curKm);
+  const lastDate = last && last.date ? last.date : (s.baseDate || veh?.kmDate || today());
+
+  let kmRemain = null, nextKm = null;
+  if(s.intKm){ nextKm = lastKm + Number(s.intKm); kmRemain = nextKm - curKm; }
+
+  let daysRemain = null, nextDate = null;
+  if(s.intMois){
+    const d = new Date(lastDate+"T00:00:00"); d.setMonth(d.getMonth()+Number(s.intMois));
+    nextDate = d.toISOString().slice(0,10);
+    daysRemain = Math.round((d - new Date(today()+"T00:00:00"))/86400000);
+  }
+
+  // statut = pire des deux
+  let level = "ok";
+  const overKm = kmRemain!=null && kmRemain<0;
+  const overDay = daysRemain!=null && daysRemain<0;
+  const soonKm = kmRemain!=null && kmRemain<=1000;
+  const soonDay = daysRemain!=null && daysRemain<=30;
+  if(overKm||overDay) level="late";
+  else if(soonKm||soonDay) level="soon";
+
+  // métrique à afficher = la plus contraignante
+  let eta = "";
+  const kmTxt = kmRemain!=null ? (kmRemain<0 ? "dépassé de "+fmtKmRaw(-kmRemain)+" km" : "dans "+fmtKmRaw(kmRemain)+" km") : null;
+  const dayTxt = daysRemain!=null ? (daysRemain<0 ? "dépassé de "+(-daysRemain)+" j" : (daysRemain>=60 ? "dans "+Math.round(daysRemain/30)+" mois" : "dans "+daysRemain+" j")) : null;
+  if(kmRemain!=null && daysRemain!=null){ eta = (kmRemain<=daysRemain*40 ? kmTxt : dayTxt); }
+  else eta = kmTxt || dayTxt || "—";
+
+  return { level, eta, nextKm, nextDate, kmRemain, daysRemain };
+}
+const rank = {late:0,soon:1,ok:2};
+
+/* ----------------------------------------------------------
+   Rendu
+----------------------------------------------------------- */
+let histFilter = { type:"", q:"" };
+
+function render(){
+  renderTabs();
+  const veh = activeVeh();
+  const app = document.getElementById("app");
+  if(!veh){
+    app.innerHTML = `<div class="empty" style="margin-top:40px">
+      <b>Aucun véhicule.</b><br>Ajoutez votre première voiture ou moto pour commencer.</div>`;
+    document.getElementById("fabAdd").style.display="none";
+    return;
+  }
+  document.getElementById("fabAdd").style.display="inline-flex";
+
+  const recs = vehRecords(veh.id);
+  const totalCost = recs.reduce((s,r)=>s+(Number(r.cout)||0),0);
+  const schedules = vehSchedules(veh.id).map(s=>({s, st:computeStatus(s)}))
+      .sort((a,b)=> rank[a.st.level]-rank[b.st.level] || (a.st.kmRemain??1e9)-(b.st.kmRemain??1e9));
+
+  const metaBits = [veh.annee, veh.motorisation, veh.immat].filter(Boolean).join("  ·  ");
+
+  app.innerHTML = `
+    <div class="veh-panel">
+      <div class="veh-head">
+        <div>
+          <div class="veh-name">${esc(veh.marque)} ${esc(veh.modele)}</div>
+          <div class="veh-meta">${esc(metaBits)||"—"}</div>
+        </div>
+        <div class="veh-actions">
+          <button class="icon-btn" id="editVeh" title="Modifier le véhicule" aria-label="Modifier le véhicule">✎</button>
+        </div>
+      </div>
+      <div class="gauges">
+        <div class="gauge">
+          <div class="gauge-label">Kilométrage</div>
+          <div class="odo">
+            <span class="odo-val">${veh.km!=null?fmtKmRaw(veh.km):"—"}</span>
+            <span class="odo-unit">km</span>
+          </div>
+          <div class="gauge-sub">relevé le ${fmtDate(veh.kmDate)} · <a href="#" id="updKm" style="color:var(--focus)">mettre à jour</a></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">Coût total</div>
+          <div class="big">${fmtEUR(totalCost)}</div>
+          <div class="gauge-sub">sur ${recs.length} interv.</div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label">À surveiller</div>
+          <div class="big" style="color:${schedules.some(x=>x.st.level==='late')?'var(--late)':schedules.some(x=>x.st.level==='soon')?'var(--soon)':'var(--ok)'}">
+            ${schedules.filter(x=>x.st.level!=='ok').length}
+          </div>
+          <div class="gauge-sub">${schedules.filter(x=>x.st.level==='late').length} en retard</div>
+        </div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="section-title">À surveiller <span class="count-chip">${schedules.length}</span></div>
+        <button class="btn ghost tiny" id="addSch">+ Type suivi</button>
+      </div>
+      <div class="tell-list" id="tellList">
+        ${schedules.length ? schedules.map(({s,st})=>tellRow(s,st)).join("") :
+          `<div class="empty"><b>Aucun entretien suivi.</b><br>Ajoutez un type (vidange, freins…) avec sa périodicité pour activer les rappels.</div>`}
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="section-title">Historique <span class="count-chip">${recs.length}</span></div>
+      </div>
+      ${recs.length ? `<div class="filters">
+        <select class="filter" id="fType"><option value="">Tous les types</option>${
+          [...new Set(recs.map(r=>r.type))].map(t=>`<option value="${esc(t)}" ${histFilter.type===t?"selected":""}>${esc(t)}</option>`).join("")
+        }</select>
+        <input class="filter" id="fQ" placeholder="rechercher (garage, note…)" value="${esc(histFilter.q)}" style="flex:1;min-width:130px">
+      </div>`:""}
+      <div class="hist" id="histList">
+        ${renderHistRows(recs)}
+      </div>
+    </section>
+  `;
+
+  // listeners
+  document.getElementById("editVeh").onclick = ()=>vehicleModal(veh);
+  document.getElementById("updKm").onclick = e=>{e.preventDefault();kmModal(veh);};
+  document.getElementById("addSch").onclick = ()=>scheduleModal(null,veh.id);
+  const fType=document.getElementById("fType"), fQ=document.getElementById("fQ");
+  if(fType) fType.onchange=()=>{histFilter.type=fType.value;refreshHist();};
+  if(fQ) fQ.oninput=()=>{histFilter.q=fQ.value;refreshHist();};
+  bindRowClicks();
+}
+
+function tellRow(s,st){
+  return `<div class="tell-row" tabindex="0" role="button" data-sch="${s.id}">
+    <span class="dot ${st.level}"></span>
+    <div class="tell-main">
+      <div class="tell-type">${esc(s.type)}</div>
+      <div class="tell-int">${[s.intKm?fmtKmRaw(s.intKm)+" km":null, s.intMois?s.intMois+" mois":null].filter(Boolean).join(" · ")||"périodicité non définie"}</div>
+    </div>
+    <div class="tell-status">
+      <span class="tell-badge ${st.level}">${st.level==="late"?"En retard":st.level==="soon"?"À venir":"À jour"}</span>
+      <div class="tell-eta">${esc(st.eta)}</div>
+    </div>
+  </div>`;
+}
+
+function applyFilter(recs){
+  return recs.filter(r=>{
+    if(histFilter.type && r.type!==histFilter.type) return false;
+    if(histFilter.q){
+      const q=histFilter.q.toLowerCase();
+      const hay=[r.type,r.lieu,r.notes].filter(Boolean).join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function renderHistRows(recs){
+  const list = applyFilter(recs);
+  if(!list.length) return `<div class="empty"><b>${recs.length?"Aucun résultat":"Aucune intervention enregistrée"}.</b><br>${recs.length?"Modifiez les filtres.":"Touchez « + Entretien » pour en ajouter une."}</div>`;
+  return list.map(r=>{
+    const detail=[r.km!=null&&r.km!==""?fmtKmRaw(r.km)+" km":null, r.lieu].filter(Boolean).join(" · ");
+    return `<div class="hist-row" tabindex="0" role="button" data-rec="${r.id}">
+      <div class="hist-date">${fmtDateShort(r.date)}</div>
+      <div class="hist-mid">
+        <div class="hist-type">${esc(r.type)}</div>
+        <div class="hist-detail">${esc(detail)||"&nbsp;"}</div>
+      </div>
+      <div class="hist-cost">${r.cout!=null&&r.cout!==""?fmtEUR(r.cout):"—"}</div>
+    </div>`;
+  }).join("");
+}
+function refreshHist(){
+  const veh=activeVeh(); if(!veh) return;
+  document.getElementById("histList").innerHTML = renderHistRows(vehRecords(veh.id));
+  bindRowClicks();
+}
+function bindRowClicks(){
+  document.querySelectorAll("[data-rec]").forEach(el=>{
+    const r=state.records.find(x=>x.id===el.dataset.rec);
+    el.onclick=()=>recordModal(r,r.vehiculeId);
+    el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();recordModal(r,r.vehiculeId);}};
+  });
+  document.querySelectorAll("[data-sch]").forEach(el=>{
+    const s=state.schedules.find(x=>x.id===el.dataset.sch);
+    el.onclick=()=>scheduleModal(s,s.vehiculeId);
+    el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();scheduleModal(s,s.vehiculeId);}};
+  });
+}
+
+function renderTabs(){
+  const tabs=document.getElementById("vehTabs");
+  tabs.innerHTML = state.vehicles.map(v=>`
+    <button class="veh-tab" role="tab" aria-selected="${v.id===state.activeId}" data-veh="${v.id}">
+      <span class="ic">${v.type==="moto"?"🏍":"🚗"}</span>${esc(v.marque)} ${esc(v.modele)}
+    </button>`).join("");
+  tabs.querySelectorAll("[data-veh]").forEach(b=>{
+    b.onclick=()=>{state.activeId=b.dataset.veh;histFilter={type:"",q:""};saveState();render();};
+  });
+}
+
+/* ----------------------------------------------------------
+   Modales
+----------------------------------------------------------- */
+const overlay=document.getElementById("overlay");
+function openModal(html){
+  overlay.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
+  overlay.classList.add("show");
+  document.body.style.overflow="hidden";
+  const first=overlay.querySelector("input,select,textarea,button");
+  if(first) setTimeout(()=>first.focus(),40);
+}
+function closeModal(){overlay.classList.remove("show");overlay.innerHTML="";document.body.style.overflow="";}
+overlay.addEventListener("click",e=>{if(e.target===overlay)closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&overlay.classList.contains("show"))closeModal();});
+
+function val(id){const el=document.getElementById(id);return el?el.value.trim():"";}
+function numOrNull(id){const v=val(id);return v===""?null:Number(v.replace(/\s/g,"").replace(",","."));}
+
+/* --- Véhicule --- */
+function vehicleModal(veh){
+  const isNew=!veh;
+  veh=veh||{id:uid(),type:"voiture",marque:"",modele:"",motorisation:"",annee:"",immat:"",km:"",kmDate:today()};
+  openModal(`
+    <div class="modal-head"><div class="modal-title">${isNew?"Nouveau véhicule":"Modifier le véhicule"}</div>
+      <button class="icon-btn" id="x" aria-label="Fermer">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Type</label>
+        <div class="seg" id="vType">
+          <button type="button" data-t="voiture" aria-pressed="${veh.type!=="moto"}">🚗 Voiture</button>
+          <button type="button" data-t="moto" aria-pressed="${veh.type==="moto"}">🏍 Moto</button>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Marque</label><input id="vMarque" value="${esc(veh.marque)}" placeholder="Nissan"></div>
+        <div class="field"><label>Modèle</label><input id="vModele" value="${esc(veh.modele)}" placeholder="Qashqai"></div>
+      </div>
+      <div class="field"><label>Motorisation</label><input id="vMot" value="${esc(veh.motorisation)}" placeholder="1.6 dCi 130 · R9M"></div>
+      <div class="row2">
+        <div class="field"><label>Année</label><input id="vAnnee" class="mono" inputmode="numeric" value="${esc(veh.annee)}" placeholder="2013"></div>
+        <div class="field"><label>Immatriculation</label><input id="vImmat" class="mono" value="${esc(veh.immat)}" placeholder="AB-123-CD"></div>
+      </div>
+      <div class="row2">
+        <div class="field mono"><label>Kilométrage actuel</label><input id="vKm" class="mono" inputmode="numeric" value="${esc(veh.km)}" placeholder="160000"></div>
+        <div class="field"><label>Relevé le</label><input id="vKmDate" type="date" value="${esc(veh.kmDate||today())}"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      ${isNew?"<span></span>":`<button class="link-danger" id="del">Supprimer</button>`}
+      <div class="right">
+        <button class="btn ghost" id="cancel">Annuler</button>
+        <button class="btn" id="save">Enregistrer</button>
+      </div>
+    </div>
+  `);
+  let type=veh.type;
+  document.querySelectorAll("#vType button").forEach(b=>b.onclick=()=>{
+    type=b.dataset.t;document.querySelectorAll("#vType button").forEach(x=>x.setAttribute("aria-pressed",x===b));});
+  document.getElementById("x").onclick=closeModal;
+  document.getElementById("cancel").onclick=closeModal;
+  if(!isNew) document.getElementById("del").onclick=()=>{
+    if(confirm("Supprimer ce véhicule et tout son historique ?")){
+      state.vehicles=state.vehicles.filter(v=>v.id!==veh.id);
+      state.records=state.records.filter(r=>r.vehiculeId!==veh.id);
+      state.schedules=state.schedules.filter(s=>s.vehiculeId!==veh.id);
+      if(state.activeId===veh.id) state.activeId=state.vehicles[0]?.id||null;
+      saveState();closeModal();render();
+    }
+  };
+  document.getElementById("save").onclick=()=>{
+    const marque=val("vMarque"), modele=val("vModele");
+    if(!marque&&!modele){alert("Indiquez au moins une marque ou un modèle.");return;}
+    const obj={id:veh.id,type,marque,modele,motorisation:val("vMot"),
+      annee:val("vAnnee"),immat:val("vImmat"),km:numOrNull("vKm"),kmDate:val("vKmDate")||today()};
+    const i=state.vehicles.findIndex(v=>v.id===veh.id);
+    if(i>=0) state.vehicles[i]=obj; else state.vehicles.push(obj);
+    if(isNew) state.activeId=obj.id;
+    saveState();closeModal();render();
+  };
+}
+
+/* --- Mise à jour km rapide --- */
+function kmModal(veh){
+  openModal(`
+    <div class="modal-head"><div class="modal-title">Mettre à jour le kilométrage</div>
+      <button class="icon-btn" id="x" aria-label="Fermer">✕</button></div>
+    <div class="modal-body">
+      <div class="row2">
+        <div class="field mono"><label>Kilométrage</label><input id="kKm" class="mono" inputmode="numeric" value="${esc(veh.km??"")}"></div>
+        <div class="field"><label>Date du relevé</label><input id="kDate" type="date" value="${today()}"></div>
+      </div>
+      <div class="note">Le kilométrage sert au calcul des échéances. Tenez-le à jour pour des rappels justes.</div>
+    </div>
+    <div class="modal-foot"><span></span><div class="right">
+      <button class="btn ghost" id="cancel">Annuler</button>
+      <button class="btn" id="save">Enregistrer</button></div></div>
+  `);
+  document.getElementById("x").onclick=closeModal;
+  document.getElementById("cancel").onclick=closeModal;
+  document.getElementById("save").onclick=()=>{
+    const i=state.vehicles.findIndex(v=>v.id===veh.id);
+    state.vehicles[i].km=numOrNull("kKm");
+    state.vehicles[i].kmDate=val("kDate")||today();
+    saveState();closeModal();render();
+  };
+}
+
+/* --- Intervention (record) --- */
+function recordModal(rec,vehId){
+  const isNew=!rec;
+  const veh=state.vehicles.find(v=>v.id===vehId);
+  rec=rec||{id:uid(),vehiculeId:vehId,type:"",date:today(),km:veh?.km??"",cout:"",lieu:"",notes:""};
+  openModal(`
+    <div class="modal-head"><div class="modal-title">${isNew?"Nouvel entretien":"Modifier l'entretien"}</div>
+      <button class="icon-btn" id="x" aria-label="Fermer">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Type d'intervention</label>
+        <input id="rType" list="typeList" value="${esc(rec.type)}" placeholder="Vidange, plaquettes, pneus…">
+        <datalist id="typeList">${TYPES.map(t=>`<option value="${esc(t)}">`).join("")}</datalist>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Date</label><input id="rDate" type="date" value="${esc(rec.date||today())}"></div>
+        <div class="field mono"><label>Kilométrage</label><input id="rKm" class="mono" inputmode="numeric" value="${esc(rec.km)}" placeholder="km"></div>
+      </div>
+      <div class="row2">
+        <div class="field mono"><label>Coût (€)</label><input id="rCout" class="mono" inputmode="decimal" value="${esc(rec.cout)}" placeholder="85"></div>
+        <div class="field"><label>Garage / lieu</label><input id="rLieu" value="${esc(rec.lieu)}" placeholder="Dafy, maison…"></div>
+      </div>
+      <div class="field"><label>Notes — pièces, références</label>
+        <textarea id="rNotes" placeholder="Réf. pompe à eau, marque d'huile, observations…">${esc(rec.notes)}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      ${isNew?"<span></span>":`<button class="link-danger" id="del">Supprimer</button>`}
+      <div class="right">
+        <button class="btn ghost" id="cancel">Annuler</button>
+        <button class="btn" id="save">Enregistrer</button>
+      </div>
+    </div>
+  `);
+  document.getElementById("x").onclick=closeModal;
+  document.getElementById("cancel").onclick=closeModal;
+  if(!isNew) document.getElementById("del").onclick=()=>{
+    if(confirm("Supprimer cette intervention ?")){
+      state.records=state.records.filter(r=>r.id!==rec.id);saveState();closeModal();render();}
+  };
+  document.getElementById("save").onclick=()=>{
+    const type=val("rType");
+    if(!type){alert("Indiquez le type d'intervention.");return;}
+    const obj={id:rec.id,vehiculeId:vehId,type,date:val("rDate")||today(),
+      km:numOrNull("rKm"),cout:numOrNull("rCout"),lieu:val("rLieu"),notes:val("rNotes")};
+    const i=state.records.findIndex(r=>r.id===rec.id);
+    if(i>=0) state.records[i]=obj; else state.records.push(obj);
+    // proposer la mise à jour du km véhicule si l'intervention est plus récente
+    const v=state.vehicles.find(x=>x.id===vehId);
+    if(v && obj.km!=null && (v.km==null || obj.km>Number(v.km)) && obj.date>= (v.kmDate||"")){
+      v.km=obj.km; v.kmDate=obj.date;
+    }
+    saveState();closeModal();render();
+  };
+}
+
+/* --- Échéance / type suivi (schedule) --- */
+function scheduleModal(s,vehId){
+  const isNew=!s;
+  s=s||{id:uid(),vehiculeId:vehId,type:"",intKm:"",intMois:"",baseKm:null,baseDate:null};
+  openModal(`
+    <div class="modal-head"><div class="modal-title">${isNew?"Type suivi":"Modifier le suivi"}</div>
+      <button class="icon-btn" id="x" aria-label="Fermer">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Type d'entretien</label>
+        <input id="sType" list="typeList2" value="${esc(s.type)}" placeholder="Vidange, liquide de frein…">
+        <datalist id="typeList2">${TYPES.map(t=>`<option value="${esc(t)}">`).join("")}</datalist>
+      </div>
+      <div class="row2">
+        <div class="field mono"><label>Tous les … km</label><input id="sKm" class="mono" inputmode="numeric" value="${esc(s.intKm??"")}" placeholder="15000"></div>
+        <div class="field mono"><label>… ou tous les … mois</label><input id="sMois" class="mono" inputmode="numeric" value="${esc(s.intMois??"")}" placeholder="12"></div>
+      </div>
+      <div class="note">Renseignez au moins l'un des deux. L'échéance se calcule à partir de la dernière intervention de ce type, ou des valeurs ci-dessous si aucune n'est encore enregistrée.</div>
+      <div class="row2" style="margin-top:12px">
+        <div class="field mono"><label>Dernier fait à (km)</label><input id="sBaseKm" class="mono" inputmode="numeric" value="${esc(s.baseKm??"")}" placeholder="optionnel"></div>
+        <div class="field"><label>Dernier fait le</label><input id="sBaseDate" type="date" value="${esc(s.baseDate??"")}"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      ${isNew?"<span></span>":`<button class="link-danger" id="del">Supprimer</button>`}
+      <div class="right">
+        <button class="btn ghost" id="cancel">Annuler</button>
+        <button class="btn" id="save">Enregistrer</button>
+      </div>
+    </div>
+  `);
+  document.getElementById("x").onclick=closeModal;
+  document.getElementById("cancel").onclick=closeModal;
+  if(!isNew) document.getElementById("del").onclick=()=>{
+    if(confirm("Retirer ce suivi ?")){
+      state.schedules=state.schedules.filter(x=>x.id!==s.id);saveState();closeModal();render();}
+  };
+  document.getElementById("save").onclick=()=>{
+    const type=val("sType");
+    if(!type){alert("Indiquez le type d'entretien.");return;}
+    const intKm=numOrNull("sKm"), intMois=numOrNull("sMois");
+    if(!intKm&&!intMois){alert("Indiquez une périodicité en km ou en mois.");return;}
+    const obj={id:s.id,vehiculeId:vehId,type,intKm,intMois,baseKm:numOrNull("sBaseKm"),baseDate:val("sBaseDate")||null};
+    const i=state.schedules.findIndex(x=>x.id===s.id);
+    if(i>=0) state.schedules[i]=obj; else state.schedules.push(obj);
+    saveState();closeModal();render();
+  };
+}
+
+/* ----------------------------------------------------------
+   Boot
+----------------------------------------------------------- */
+document.getElementById("addVehBtn").onclick=()=>vehicleModal(null);
+document.getElementById("fabAdd").onclick=()=>{const v=activeVeh();if(v)recordModal(null,v.id);else vehicleModal(null);};
+
+loadState().then(render);
+</script>
+</body>
+</html>
